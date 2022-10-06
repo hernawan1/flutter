@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.8
-
 import 'package:meta/meta.dart';
 
 import '../build_info.dart';
@@ -16,11 +14,10 @@ import 'build_aar.dart';
 import 'build_apk.dart';
 import 'build_appbundle.dart';
 import 'build_bundle.dart';
-import 'build_fuchsia.dart';
 import 'build_ios.dart';
 import 'build_ios_framework.dart';
+import 'build_macos_framework.dart';
 import 'build_web.dart';
-import 'build_winuwp.dart';
 
 class BuildCommand extends FlutterCommand {
   BuildCommand({ bool verboseHelp = false }) {
@@ -29,6 +26,10 @@ class BuildCommand extends FlutterCommand {
     _addSubcommand(BuildAppBundleCommand(verboseHelp: verboseHelp));
     _addSubcommand(BuildIOSCommand(verboseHelp: verboseHelp));
     _addSubcommand(BuildIOSFrameworkCommand(
+      buildSystem: globals.buildSystem,
+      verboseHelp: verboseHelp,
+    ));
+    _addSubcommand(BuildMacOSFrameworkCommand(
       buildSystem: globals.buildSystem,
       verboseHelp: verboseHelp,
     ));
@@ -41,8 +42,6 @@ class BuildCommand extends FlutterCommand {
       verboseHelp: verboseHelp
     ));
     _addSubcommand(BuildWindowsCommand(verboseHelp: verboseHelp));
-    _addSubcommand(BuildWindowsUwpCommand(verboseHelp: verboseHelp));
-    _addSubcommand(BuildFuchsiaCommand(verboseHelp: verboseHelp));
   }
 
   void _addSubcommand(BuildSubCommand command) {
@@ -61,11 +60,11 @@ class BuildCommand extends FlutterCommand {
   String get category => FlutterCommandCategory.project;
 
   @override
-  Future<FlutterCommandResult> runCommand() async => null;
+  Future<FlutterCommandResult> runCommand() async => FlutterCommandResult.fail();
 }
 
 abstract class BuildSubCommand extends FlutterCommand {
-  BuildSubCommand({@required bool verboseHelp}) {
+  BuildSubCommand({required bool verboseHelp}) {
     requiresPubspecYaml();
     usesFatalWarningsOption(verboseHelp: verboseHelp);
   }
@@ -82,8 +81,11 @@ abstract class BuildSubCommand extends FlutterCommand {
   @protected
   void displayNullSafetyMode(BuildInfo buildInfo) {
     globals.printStatus('');
-    if (buildInfo.nullSafetyMode ==  NullSafetyMode.sound) {
-      globals.printStatus('💪 Building with sound null safety 💪', emphasis: true);
+    if (buildInfo.nullSafetyMode == NullSafetyMode.sound) {
+      globals.printStatus(
+        '💪 Building with sound null safety 💪',
+        emphasis: true,
+      );
     } else {
       globals.printStatus(
         'Building without sound null safety',

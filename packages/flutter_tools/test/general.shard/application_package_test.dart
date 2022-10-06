@@ -25,6 +25,7 @@ import 'package:test/fake.dart';
 
 import '../src/common.dart';
 import '../src/context.dart';
+import '../src/fake_process_manager.dart';
 import '../src/fakes.dart';
 
 void main() {
@@ -84,7 +85,9 @@ void main() {
         applicationBinary: apkFile,
       );
       expect(applicationPackage.name, 'app.apk');
-      expect(fakeProcessManager.hasRemainingExpectations, isFalse);
+      expect(applicationPackage, isA<PrebuiltApplicationPackage>());
+      expect((applicationPackage as PrebuiltApplicationPackage).applicationPackage.path, apkFile.path);
+      expect(fakeProcessManager, hasNoRemainingExpectations);
     }, overrides: overrides);
 
     testUsingContext('Licenses available, build tools not, apk exists', () async {
@@ -106,7 +109,7 @@ void main() {
         buildInfo: null,
         applicationBinary: globals.fs.file('app.apk'),
       );
-      expect(fakeProcessManager.hasRemainingExpectations, isFalse);
+      expect(fakeProcessManager, hasNoRemainingExpectations);
     }, overrides: overrides);
 
     testUsingContext('Licenses available, build tools available, does not call gradle dependencies', () async {
@@ -117,7 +120,7 @@ void main() {
         TargetPlatform.android_arm,
         buildInfo: null,
       );
-      expect(fakeProcessManager.hasRemainingExpectations, isFalse);
+      expect(fakeProcessManager, hasNoRemainingExpectations);
     }, overrides: overrides);
 
     testWithoutContext('returns null when failed to extract manifest', () async {
@@ -134,7 +137,7 @@ void main() {
       );
 
       expect(androidApk, isNull);
-      expect(fakeProcessManager.hasRemainingExpectations, isFalse);
+      expect(fakeProcessManager, hasNoRemainingExpectations);
     });
   });
 
@@ -298,9 +301,10 @@ void main() {
       testPlistParser.setProperty('CFBundleIdentifier', 'fooBundleId');
       final PrebuiltIOSApp iosApp = IOSApp.fromPrebuiltApp(globals.fs.file('bundle.app')) as PrebuiltIOSApp;
       expect(testLogger.errorText, isEmpty);
-      expect(iosApp.bundleDir.path, 'bundle.app');
+      expect(iosApp.uncompressedBundle.path, 'bundle.app');
       expect(iosApp.id, 'fooBundleId');
       expect(iosApp.bundleName, 'bundle.app');
+      expect(iosApp.applicationPackage.path, globals.fs.directory('bundle.app').path);
     }, overrides: overrides);
 
     testUsingContext('Bad ipa zip-file, no payload dir', () {
@@ -348,9 +352,10 @@ void main() {
       };
       final PrebuiltIOSApp iosApp = IOSApp.fromPrebuiltApp(globals.fs.file('app.ipa')) as PrebuiltIOSApp;
       expect(testLogger.errorText, isEmpty);
-      expect(iosApp.bundleDir.path, endsWith('bundle.app'));
+      expect(iosApp.uncompressedBundle.path, endsWith('bundle.app'));
       expect(iosApp.id, 'fooBundleId');
       expect(iosApp.bundleName, 'bundle.app');
+      expect(iosApp.applicationPackage.path, globals.fs.file('app.ipa').path);
     }, overrides: overrides);
 
     testUsingContext('returns null when there is no ios or .ios directory', () async {
@@ -427,6 +432,7 @@ void main() {
       final PrebuiltFuchsiaApp fuchsiaApp = FuchsiaApp.fromPrebuiltApp(globals.fs.file('bundle.far')) as PrebuiltFuchsiaApp;
       expect(testLogger.errorText, isEmpty);
       expect(fuchsiaApp.id, 'bundle.far');
+      expect(fuchsiaApp.applicationPackage.path, globals.fs.file('bundle.far').path);
     }, overrides: overrides);
 
     testUsingContext('returns null when there is no fuchsia', () async {
